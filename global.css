@@ -1,0 +1,203 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+  background: linear-gradient(135deg, #007bff, #00d4ff);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Container do Chat */
+.chat-container {
+  width: 500px;
+  height: 650px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.faq{
+  background-color: bisque;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+
+/* Cabeçalho do Chat */
+.chat-header {
+  background: #0056b3;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Fundo do chat para um visual mais agradável */
+.chat-main {
+  flex: 1;
+  overflow-y: auto;
+  background: #f5f5f5; /* Fundo cinza claro */
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #007bff #ffffff;
+}
+
+/* Lista de mensagens */
+#messages {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  transform: translateY(10px);
+  animation: fadeIn 0.9s ease-in-out forwards;
+}
+
+
+
+
+/* Animação de entrada nas mensagens */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#chat-form{
+  display: flex;
+}
+
+/* Rodapé do Chat */
+.chat-footer {
+  border-top: 2px solid #ddd;
+  padding: 12px;
+  background: #ffffff;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-footer input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 25px;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+.chat-footer button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  font-size: 14px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-top: 10px;
+}
+
+.chat-footer button:hover {
+  background: #218838;
+}
+
+/* Modo Responsivo */
+@media (max-width: 600px) {
+  .chat-container {
+    width: 90%;
+    height: 85vh;
+  }
+  .message {
+    max-width: 90%;
+  }
+}
+
+
+/* 🔹 Padronizar mensagens do usuário e do atendente 🔹 */
+.message {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Espaço entre avatar e mensagem */
+  max-width: fit-content; /* Ajuste automático ao tamanho do texto */
+  padding: 12px 15px;
+  border-radius: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  word-break: break-word;
+  background: #ffffff; /* Fundo branco para todas as mensagens */
+  color: black;
+}
+
+/* 🔹 Mensagens do usuário (sempre à direita) 🔹 */
+.message.user {
+  align-self: flex-end;
+  flex-direction: row; /* Avatar à direita */
+  border-top-right-radius: 0px;
+}
+
+/* 🔹 Mensagens do atendente (sempre à esquerda) 🔹 */
+.message.attendant {
+  align-self: flex-start;
+  flex-direction: row-reverse; /* Avatar à esquerda */
+  border-top-left-radius: 0px;
+}
+
+/* 🔹 Avatares sempre do mesmo tamanho 🔹 */
+.avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  object-fit: cover; /* Evita distorção */
+}
+
+/* 🔹 Efeito de entrada para mensagens */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 🔹 Aplicar efeito a todas as mensagens */
+.message {
+  animation: fadeIn 0.3s ease-in-out;
+  transition: transform 0.2s ease-in-out;
+}
+
+/* 🔹 Efeito de hover para melhorar interatividade */
+.message:hover {
+  transform: scale(1.02);
+}
+
+
+
+

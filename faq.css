@@ -1,0 +1,52 @@
+/* 🔹 Estilização do bloco de opções do FAQ */
+.faq-container {
+    background: linear-gradient(135deg, #007bff, #00d4ff);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    color: white;
+    margin: 15px 0;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeIn 0.5s ease-in-out forwards;
+  }
+  
+  /* 🔹 Texto dentro da caixa */
+  .faq-container p {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 12px;
+  }
+  
+  /* 🔹 Estilização das opções */
+  .faq-option {
+    background: white;
+    color: #007bff;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 8px auto;
+    font-weight: bold;
+    text-align: center;
+    width: 90%;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out, color 0.3s;
+  }
+  
+  .faq-option:hover {
+    background: #0056b3;
+    color: white;
+  }
+  
+  /* 🔹 Animação suave */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  

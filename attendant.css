@@ -1,0 +1,38 @@
+/* 🔹 Estrutura geral da mensagem */
+.message {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espaço entre avatar e mensagem */
+    max-width: fit-content; /* Ajuste automático ao tamanho do texto */
+    padding: 12px 15px;
+    border-radius: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    word-break: break-word;
+    background: #ffffff; /* Fundo branco */
+    color: black;
+  }
+  
+  /* 🔹 Mensagens do usuário na tela do atendente */
+  .message.user {
+    align-self: flex-start;
+    flex-direction: row-reverse; /* Avatar à esquerda */
+    border-top-left-radius: 0px;
+  }
+  
+  /* 🔹 Mensagens do atendente na tela do atendente */
+  .message.attendant {
+    align-self: flex-end;
+    border-top-right-radius: 0px;
+  }
+  
+  /* 🔹 Avatar padrão para usuário e atendente */
+  .avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  
