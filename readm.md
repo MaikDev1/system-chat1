@@ -113,3 +113,7 @@ messageElement.classList.add("message", "user");
 
 }
 });
+
+// instalar module
+
+npm install express socket.io cors dotenv

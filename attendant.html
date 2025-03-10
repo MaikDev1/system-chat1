@@ -1,16 +1,29 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat - Atendente</title>
+  <title>Painel do Atendente</title>
   <link rel="stylesheet" href="global.css" />
   <link rel="stylesheet" href="attendant.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </head>
 
+
 <body>
+
+    <!-- Ícone de sino para exibir fila de atendimento -->
+  <div class="notification-icon" onclick="toggleQueue()">
+  🔔 <span id="notification-count">0</span>
+  </div>
+  
+  <!-- Lista de notificações da fila (inicialmente oculta) -->
+  <div id="notification-list" class="notification-dropdown">
+  <ul id="queue-list"></ul>
+  </div>
+  
+ 
+
   <div class="chat-container">
     <!-- Cabeçalho do chat -->
     <header class="chat-header">
@@ -18,6 +31,7 @@
       <button id="toggle-sound" class="toggle-sound">Som: Ligado</button>
     </header>
 
+  
     <!-- Área principal do chat -->
     <main class="chat-main">
       <ul id="messages"></ul>

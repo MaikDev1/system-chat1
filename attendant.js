@@ -7,112 +7,92 @@ const typingIndicator = document.getElementById("typing-indicator");
 const endServiceButton = document.getElementById("end-service");
 const toggleSoundButton = document.getElementById("toggle-sound");
 
-let soundEnabled = true;
+const notificationIcon = document.querySelector(".notification-icon");
+const notificationList = document.getElementById("notification-list");
+const notificationCount = document.getElementById("notification-count");
+const queueList = document.getElementById("queue-list");
 
-function appendMessage(content, type = "message") {
-  const li = document.createElement("li");
-  li.textContent = content;
-  li.classList.add(type);
-  messagesList.appendChild(li);
+let soundEnabled = true;
+let isAttending = false; // 🔹 Controla se o atendente está em atendimento
+let currentUser = null; // 🔹 Armazena o ID do usuário conectado
+
+// 🔹 Recupera sessão se a página for recarregada
+socket.on("resume chat", (userId) => {
+  currentUser = userId;
+  isAttending = true;
+  appendChatMessage(`Bot: Você retomou o atendimento com o usuário ${userId}`, "system");
+});
+
+// 🔹 Alterna exibição da fila ao clicar no sino
+function toggleQueue() {
+  notificationList.style.display = notificationList.style.display === "block" ? "none" : "block";
+}
+
+// 🔊 Toca som quando um novo usuário entra na fila
+function playNotificationSound() {
+  if (soundEnabled) {
+    const audio = new Audio("notification.mp3");
+    audio.play().catch((err) => console.error("Erro ao reproduzir som:", err));
+  }
+}
+
+// 🔹 Adiciona mensagens ao chat
+function appendChatMessage(message, sender) {
+  const messageElement = document.createElement("li");
+  messageElement.classList.add("message", sender);
+
+  const avatar = document.createElement("img");
+  avatar.src = sender === "attendant" ? "attendant-avatar.png" : "user-avatar.png";
+  avatar.classList.add("avatar");
+
+  const textElement = document.createElement("span");
+  textElement.textContent = message;
+  textElement.classList.add("text");
+
+  sender === "attendant" 
+    ? messageElement.append(avatar, textElement) 
+    : messageElement.append(textElement, avatar);
+
+  messagesList.appendChild(messageElement);
   updateScroll();
 }
 
+// 🔹 Atualiza scroll do chat
 function updateScroll() {
-  const container = document.querySelector(".chat-main");
-  // Aguarda o layout atualizar e então rola para o final
   requestAnimationFrame(() => {
-    container.scrollTop = container.scrollHeight;
+    document.querySelector(".chat-main").scrollTop = messagesList.scrollHeight;
   });
 }
 
-function playSound() {
-  if (!soundEnabled) return;
-  const audio = new Audio("notification.mp3");
-  audio.play().catch((err) => console.error("Erro ao reproduzir som:", err));
-}
-
+// 🔹 Controle do som
 toggleSoundButton.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   toggleSoundButton.textContent = soundEnabled ? "Som: Ligado" : "Som: Mutado";
 });
 
+// 🔹 Enviar mensagem do atendente
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const input = document.getElementById("m");
   const message = input.value.trim();
   if (!message) return;
 
-  // Criando o elemento da mensagem
-  const messages = document.getElementById("messages");
-  const messageElement = document.createElement("li");
-  messageElement.classList.add("message", "attendant");
-
-  // Criar avatar do atendente
-  const avatar = document.createElement("img");
-  avatar.src = "attendant-avatar.png";  // Certifique-se de que este arquivo existe na pasta do projeto
-  avatar.classList.add("avatar");
-
-  // Criar o texto da mensagem
-  const textElement = document.createElement("span");
-  textElement.textContent = message;
-  textElement.classList.add("text");
-
-  // Estruturando a mensagem no HTML
-  messageElement.appendChild(avatar);
-  messageElement.appendChild(textElement);
-
-  // Adicionando ao chat
-  messages.appendChild(messageElement);
-  messages.scrollTop = messages.scrollHeight;
-
-  // Enviar a mensagem para o socket
+  appendChatMessage(message, "attendant");
   socket.emit("chat message", message);
   input.value = "";
 });
 
-const inputField = document.getElementById("m");
-inputField.addEventListener("input", () => {
-  socket.emit("typing", "Usuário");
-});
-
+// 🔹 Recebendo mensagens do usuário
 socket.on("chat message", (data) => {
-  const messages = document.getElementById("messages");
-  const messageElement = document.createElement("li");
-
-  // Criar avatar
-  const avatar = document.createElement("img");
-  avatar.src = data.sender === "user" ? "attendant-avatar.png" : "user-avatar.png";
-  avatar.classList.add("avatar");
-
-  // Criar balão de mensagem
-  const textElement = document.createElement("span");
-  textElement.textContent = data.message;
-  textElement.classList.add("text");
-
-  // Definir classes CSS
-  messageElement.classList.add("message", data.sender);
-
-  // Estruturar corretamente com avatar e texto
-  if (data.sender === "user") {
-    messageElement.appendChild(textElement);
-    messageElement.appendChild(avatar);
-  } else {
-    messageElement.appendChild(avatar);
-    messageElement.appendChild(textElement);
-  }
-
-  messages.appendChild(messageElement);
-  messages.scrollTop = messages.scrollHeight;
+  appendChatMessage(data.message, "user");
 });
 
-
-
-
-
+// 🔹 Exibir mensagens do sistema
 socket.on("system message", (msg) => {
-  appendMessage("Sistema: " + msg, "system");
+  appendChatMessage("Sistema: " + msg, "system");
 });
 
+// 🔹 Indicador de digitação
 socket.on("typing", (data) => {
   typingIndicator.style.display = "block";
   typingIndicator.textContent = data + " está digitando...";
@@ -121,6 +101,73 @@ socket.on("typing", (data) => {
   }, 2000);
 });
 
+// 🔹 Enviar indicador de digitação
+document.getElementById("m").addEventListener("input", () => {
+  socket.emit("typing", "Usuário");
+});
+
+// 🔹 Finalizar atendimento
 endServiceButton.addEventListener("click", () => {
+  if (!isAttending) {
+    alert("Você não está atendendo nenhum usuário.");
+    return;
+  }
+
   socket.emit("end service");
+  isAttending = false; // 🔹 Libera o atendente para pegar outro usuário
+  currentUser = null;
+  messagesList.innerHTML = ""; // 🔹 Apaga o chat ao finalizar o atendimento
+  appendChatMessage("🔹 Atendimento finalizado. Aguardando próximo usuário...", "system");
+  alert("Atendimento finalizado. Você pode aceitar outro usuário.");
+});
+
+// 🔹 Atualiza a fila de espera em tempo real
+socket.on("updateQueue", (waitingQueue) => {
+  queueList.innerHTML = ""; // Limpa a lista
+  notificationCount.textContent = waitingQueue.length;
+  notificationCount.style.display = waitingQueue.length > 0 ? "block" : "none";
+
+  if (waitingQueue.length === 0) {
+    queueList.innerHTML = "<li>Ninguém na fila</li>";
+    return;
+  }
+
+  waitingQueue.forEach((user) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${user.fullName || "Usuário"}</strong> - ${user.sector || "Setor Desconhecido"}<br>
+      Matrícula: ${user.matricula || "N/A"}
+      <button class="btn-atender" onclick="acceptUser('${user.id}')">Atender</button>`;
+    queueList.appendChild(li);
+  });
+
+  playNotificationSound();
+});
+
+// 🔹 Atendente aceita um usuário da fila
+function acceptUser(userId) {
+  if (isAttending) {
+    alert("⚠️ Você já está conectado a um usuário. Finalize o atendimento antes de aceitar outro.");
+    return;
+  }
+
+  socket.emit("acceptUser", userId);
+  isAttending = true; // 🔹 Define que o atendente agora está ocupado
+  currentUser = userId;
+
+  messagesList.innerHTML = ""; // 🔹 Apaga o chat ao iniciar um novo atendimento
+  appendChatMessage("🔹 Novo atendimento iniciado.", "system");
+}
+
+// 🔹 Resposta quando o usuário já foi atendido
+socket.on("userAlreadyAttended", () => {
+  alert("Usuário já foi atendido por outro atendente.");
+  isAttending = false; // 🔹 Libera o atendente caso o usuário já tenha sido atendido
+});
+
+// 🔹 Se o usuário se desconectar, liberar o atendente
+socket.on("userDisconnected", () => {
+  appendChatMessage("⚠️ O usuário se desconectou. Atendimento encerrado.", "system");
+  isAttending = false;
+  currentUser = null;
+  messagesList.innerHTML = ""; // 🔹 Apaga o chat após desconexão do usuário
 });

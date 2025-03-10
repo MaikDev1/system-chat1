@@ -36,3 +36,36 @@
   }
   
   
+  /* header
+/* 🔔 Ajuste do Ícone de Notificação */
+.notification-icon {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  cursor: pointer;
+  font-size: 20px;
+  background: white;
+  padding: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease-in-out;
+}
+
+.notification-icon:hover {
+  transform: scale(1.1);
+}
+
+/* 🔹 Posicionamento correto do dropdown da fila */
+.notification-dropdown {
+  display: none;
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  width: 280px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  padding: 10px;
+  text-align: left;
+  z-index: 1000;
+}

@@ -18,66 +18,112 @@ app.get("/attendant", (req, res) => {
   res.sendFile(__dirname + "/attendant.html");
 });
 
-// Comunicação via WebSocket (Socket.io)
-let availableAttendants = [];
-let waitingUsers = [];
-let pairings = {};
-let userInfoMap = {}; // Armazena as informações coletadas dos usuários
+// **Armazena fila de espera e atendimentos ativos**
+let waitingQueue = [];
+let activeSessions = {}; // 🔹 Salva atendentes conectados e seus usuários
+let userInfoMap = {}; // 🔹 Armazena informações dos usuários em atendimento
 
 io.on("connection", (socket) => {
   console.log("Novo socket conectado: " + socket.id);
 
+  // **Quando um atendente entra**
   socket.on("attendant join", () => {
-    console.log("Atendente conectado: " + socket.id);
-    availableAttendants.push(socket);
-    
-    if (waitingUsers.length > 0) {
-      const userSocket = waitingUsers.shift();
-      pairSockets(userSocket, socket);
+    console.log(`Atendente conectado: ${socket.id}`);
+
+    // 🔹 Se o atendente já estava em atendimento, ele retoma automaticamente
+    if (activeSessions[socket.id]) {
+      const userId = activeSessions[socket.id];
+      socket.emit("resume chat", userId);
+      io.to(userId).emit("system message", "O atendente retornou à conversa.");
+      console.log(`Atendente ${socket.id} retomou o atendimento com ${userId}`);
+    } else {
+      socket.emit("updateQueue", waitingQueue); // Atualiza fila para o atendente
     }
   });
 
+  // **Usuário solicita atendimento**
   socket.on("request attendant", (userInfo) => {
     console.log(`Usuário ${socket.id} solicitou atendimento.`);
-    
-    userInfoMap[socket.id] = userInfo; // Armazena as informações coletadas
-    
-    if (availableAttendants.length > 0) {
-      const attendantSocket = availableAttendants.shift();
-      pairSockets(socket, attendantSocket);
-    } else {
-      waitingUsers.push(socket);
-      socket.emit("system message", "Aguarde, um atendente estará disponível em breve.");
+
+    if (activeSessions[socket.id]) {
+      socket.emit("system message", "Você já está em atendimento.");
+      return;
     }
+
+    userInfo.id = socket.id;
+    userInfoMap[socket.id] = userInfo;
+    waitingQueue.push(userInfo);
+    
+    io.emit("updateQueue", waitingQueue); // Atualiza fila para os atendentes
+    socket.emit("system message", "Aguarde, um atendente estará disponível em breve.");
   });
 
-  function pairSockets(userSocket, attendantSocket) {
-    if (!userSocket || !attendantSocket) return;
-    
-    pairings[userSocket.id] = attendantSocket.id;
-    pairings[attendantSocket.id] = userSocket.id;
+  // **Atendente aceita um usuário**
+  socket.on("acceptUser", (userId) => {
+    const userIndex = waitingQueue.findIndex((user) => user.id === userId);
 
-    // Recupera as informações do usuário e envia ao atendente
-    const userInfo = userInfoMap[userSocket.id] || {};
-    attendantSocket.emit("system message", `Usuário conectado.\nNome: ${userInfo.fullName || "N/A"}\nSetor: ${userInfo.sector || "N/A"}\nMatrícula: ${userInfo.matricula || "N/A"}`);
+    if (userIndex === -1) {
+      socket.emit("userAlreadyAttended"); // Usuário já foi atendido
+      return;
+    }
 
+    const userSocket = io.sockets.sockets.get(userId);
+    if (!userSocket) {
+      socket.emit("userAlreadyAttended"); // Usuário desconectado
+      return;
+    }
+
+    // 🔹 Remove usuário da fila e registra o atendimento ativo
+    const userInfo = waitingQueue.splice(userIndex, 1)[0];
+    activeSessions[socket.id] = userId;
+    activeSessions[userId] = socket.id;
+
+    io.emit("updateQueue", waitingQueue); // Atualiza fila globalmente
+
+    // 🔹 Notifica ambos sobre a conexão
+    socket.emit("system message", `Você está atendendo ${userInfo.fullName || "Usuário"}.`);
     userSocket.emit("system message", "Você está conectado a um atendente.");
-    attendantSocket.emit("system message", "Você está conectado a um usuário.");
-  }
+  });
 
+  // **Encaminhar mensagens**
   socket.on("chat message", (message) => {
-    const targetSocketId = pairings[socket.id];
+    const targetSocketId = activeSessions[socket.id];
     if (targetSocketId) {
       io.to(targetSocketId).emit("chat message", { message });
     }
   });
 
+  // **Finalizar atendimento**
+  socket.on("end service", () => {
+    const userId = activeSessions[socket.id];
+
+    if (userId) {
+      io.to(userId).emit("system message", "O atendente finalizou o atendimento.");
+      delete activeSessions[socket.id];
+      delete activeSessions[userId];
+      delete userInfoMap[userId];
+
+      io.emit("updateQueue", waitingQueue); // Atualiza fila globalmente
+      socket.emit("clear chat"); // 🔹 Notifica para limpar o chat do atendente
+      console.log(`Atendimento entre ${socket.id} e ${userId} finalizado.`);
+    }
+  });
+
+  // **Desconectar usuário ou atendente**
   socket.on("disconnect", () => {
-    availableAttendants = availableAttendants.filter((s) => s.id !== socket.id);
-    waitingUsers = waitingUsers.filter((s) => s.id !== socket.id);
-    delete pairings[socket.id];
-    delete userInfoMap[socket.id]; // Remove as informações do usuário ao desconectar
-    console.log("Socket desconectado: " + socket.id);
+    console.log(`Socket desconectado: ${socket.id}`);
+
+    if (activeSessions[socket.id]) {
+      const pairedUser = activeSessions[socket.id];
+      io.to(pairedUser).emit("system message", "O atendente foi desconectado.");
+      delete activeSessions[pairedUser];
+      delete activeSessions[socket.id];
+    }
+
+    waitingQueue = waitingQueue.filter((user) => user.id !== socket.id);
+    delete userInfoMap[socket.id];
+
+    io.emit("updateQueue", waitingQueue);
   });
 });
 
