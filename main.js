@@ -12,8 +12,14 @@ let attendantDetails = { fullName: "", sector: "", matricula: "" };
 let soundEnabled = true; // Som ativado por padrão
 
 
-// Função para adicionar mensagem e garantir auto-scroll usando um dummy <li>
-// Mantenho exatamente sua implementação original.
+// Função para atualizar o scroll do contêiner (elemento .chat-main)
+function updateScroll() {
+  const container = document.querySelector(".chat-main");
+  requestAnimationFrame(() => {
+    container.scrollTop = container.scrollHeight;
+  });
+}
+
 // Função para adicionar mensagem e garantir auto-scroll usando um dummy <li>
 function appendMessage(content, type = "message") {
   const li = document.createElement("li");
@@ -34,13 +40,6 @@ function appendMessage(content, type = "message") {
   updateScroll();
 }
 
-// Função para atualizar o scroll do contêiner (elemento .chat-main)
-function updateScroll() {
-  const container = document.querySelector(".chat-main");
-  requestAnimationFrame(() => {
-    container.scrollTop = container.scrollHeight;
-  });
-}
 
 function playSound() {
   if (!soundEnabled) return;
