@@ -49,8 +49,8 @@ function appendChatMessage(message, sender) {
   textElement.textContent = message;
   textElement.classList.add("text");
 
-  sender === "attendant" 
-    ? messageElement.append(avatar, textElement) 
+  sender === "attendant"
+    ? messageElement.append(avatar, textElement)
     : messageElement.append(textElement, avatar);
 
   messagesList.appendChild(messageElement);

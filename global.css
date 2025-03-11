@@ -201,3 +201,6 @@ body {
 
 
 
+#dummy {
+  height: 0; /* Dummy element to force scroll */
+}
