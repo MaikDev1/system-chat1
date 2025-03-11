@@ -5,117 +5,101 @@ const messagesList = document.getElementById("messages");
 const toggleSoundButton = document.getElementById("toggle-sound");
 const input = document.getElementById("m");
 
-// Estado da conversa: "faq", "waitingName", "waitingSector", "waitingMatricula" ou "normal"
+// Estado da conversa: "faq", "waitingName", "waitingSector", "waitingMatricula", ou "normal"
 let state = "faq";
 // Dados para solicitar atendimento
 let attendantDetails = { fullName: "", sector: "", matricula: "" };
 
 let soundEnabled = true; // Som ativado por padrão
 
-// Função para atualizar o scroll do contêiner (".chat-main")
-// Essa função usa requestAnimationFrame para garantir que o DOM esteja atualizado antes de rolar.
-function updateScroll() {
-  const chatMain = document.querySelector(".chat-main");
-  if (chatMain) {
-    requestAnimationFrame(() => {
-      chatMain.scrollTop = chatMain.scrollHeight;
-    });
-  }
-}
 
-// Função para adicionar mensagem simples (para sistema, FAQ ou envio próprio)
+// Função para adicionar mensagem e garantir auto-scroll
 function appendMessage(content, type = "message") {
   const li = document.createElement("li");
   li.textContent = content;
   li.classList.add(type);
   messagesList.appendChild(li);
-  
-  // Limpa o campo de entrada
-  input.value = "";
-  
-  updateScroll();
-}
 
-// Função para adicionar mensagem de chat com avatar (para usuário ou atendente)
-function appendChatMessage(message, sender) {
-  const li = document.createElement("li");
-  li.classList.add("message", sender);
-  
-  const avatar = document.createElement("img");
-  avatar.src = sender === "attendant" ? "attendant-avatar.png" : "user-avatar.png";
-  avatar.classList.add("avatar");
-  
-  const textElement = document.createElement("span");
-  textElement.textContent = message;
-  textElement.classList.add("text");
-  
-  // Se for atendente, o avatar vem antes do texto; se for usuário, o texto vem primeiro.
-  if (sender === "attendant") {
-    li.append(avatar, textElement);
-  } else {
-    li.append(textElement, avatar);
+  // Cria ou reposiciona o elemento dummy para forçar o scroll até o final
+  let dummy = document.getElementById("dummy");
+  if (!dummy) {
+    dummy = document.createElement("li");
+    dummy.id = "dummy";
+    messagesList.appendChild(dummy);
   }
-  
-  messagesList.appendChild(li);
+
+  // Agora LIMPA o campo de entrada
+  input.value = "";
+
+  // Atualiza o scroll após a mudança
   updateScroll();
 }
 
-// Controle do som de notificação
+// Função para atualizar o scroll do contêiner (elemento .chat-main)
+// Garantindo que o scroll sempre vá para o final após adicionar uma nova mensagem
+function updateScroll() {
+  const chatMain = document.querySelector(".chat-main");
+
+  // Isso garante que o chat role até o fundo
+  chatMain.scrollTop = chatMain.scrollHeight;
+}
+
+
+function playSound() {
+  if (!soundEnabled) return;
+  const audio = new Audio("notification.mp3");
+  audio.play().catch((err) => console.error("Erro ao reproduzir som:", err));
+}
+
 toggleSoundButton.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   toggleSoundButton.textContent = soundEnabled ? "Som: Ligado" : "Som: Mutado";
 });
 
-// Envia indicador de "digitando" se o estado for "normal"
-input.addEventListener("input", () => {
+// Envia indicador de "digitando" no modo normal
+const inputField = document.getElementById("m");
+inputField.addEventListener("input", () => {
   if (state === "normal") {
     socket.emit("typing", "Atendente");
   }
 });
 
-// Evento de envio de mensagem pelo formulário (para todas as situações)
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const message = input.value.trim();
-  if (!message) return;
-  
-  // Aqui, independentemente do estado, a mensagem é tratada como do usuário
-  appendChatMessage(message, "user");
-  socket.emit("chat message", { message, sender: "user" });
-  
-  // O campo é limpo dentro da função appendMessage/appendChatMessage
-});
-
-// Ao receber mensagem de chat (via socket), exibe a mensagem e atualiza o scroll
 socket.on("chat message", (data) => {
-  // Cria a mensagem com avatar de acordo com o remetente
-  const li = document.createElement("li");
-  li.classList.add("message", data.sender);
-  
+  const messages = document.getElementById("messages");
+  const messageElement = document.createElement("li");
+
+  // Criar avatar
   const avatar = document.createElement("img");
   avatar.src = data.sender === "user" ? "user-avatar.png" : "attendant-avatar.png";
   avatar.classList.add("avatar");
-  
+
+  // Criar balão de mensagem
   const textElement = document.createElement("span");
   textElement.textContent = data.message;
   textElement.classList.add("text");
-  
+
+  // Definir classes CSS
+  messageElement.classList.add("message", data.sender);
+
+  // Estruturar corretamente com avatar e texto
   if (data.sender === "user") {
-    li.append(textElement, avatar);
+    messageElement.appendChild(textElement); // Texto antes
+    messageElement.appendChild(avatar); // Avatar depois
   } else {
-    li.append(avatar, textElement);
+    messageElement.appendChild(avatar); // Avatar antes
+    messageElement.appendChild(textElement); // Texto depois
   }
+
+  messages.appendChild(messageElement);
+  messages.scrollTop = messages.scrollHeight;
   
-  messagesList.appendChild(li);
-  updateScroll();
 });
 
-// Ao receber mensagem do sistema, exibe a mensagem e atualiza o scroll
 socket.on("system message", (msg) => {
   appendMessage("Sistema: " + msg, "system");
 });
 
 // (Opcional) Indicador de "digitando"
 socket.on("typing", (data) => {
-  // Implemente um indicador visual se necessário.
-});
+  // Aqui você pode implementar um indicador visual, se necessário.
+});  
